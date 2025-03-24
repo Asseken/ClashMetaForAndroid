@@ -32,19 +32,29 @@ subprojects {
     apply(plugin = if (isApp) "com.android.application" else "com.android.library")
 
     extensions.configure<BaseExtension> {
+        buildFeatures.buildConfig = true
         defaultConfig {
             if (isApp) {
                 applicationId = "com.github.metacubex.clash"
             }
 
-            minSdk = 21
-            targetSdk = 31
+            project.name.let { name ->
+                namespace = if (name == "app") "com.github.kr328.clash"
+                else "com.github.kr328.clash.$name"
+            }
 
-            versionName = "2.10.1"
-            versionCode = 210001
+            minSdk = 21
+            targetSdk = 35
+
+            versionName = "2.11.7"
+            versionCode = 211007
 
             resValue("string", "release_name", "v$versionName")
             resValue("integer", "release_code", "$versionCode")
+
+            ndk {
+                abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+            }
 
             externalNativeBuild {
                 cmake {
@@ -59,7 +69,7 @@ subprojects {
             }
         }
 
-        ndkVersion = "23.0.7599858"
+        ndkVersion = "27.2.12479018"
 
         compileSdkVersion(defaultConfig.targetSdk!!)
 
@@ -74,15 +84,18 @@ subprojects {
         productFlavors {
             flavorDimensions("feature")
 
-            create("meta-alpha") {
+            create("alpha") {
                 isDefault = true
                 dimension = flavorDimensionList[0]
-                versionNameSuffix = ".Meta-Alpha"
+                versionNameSuffix = ".Alpha"
 
                 buildConfigField("boolean", "PREMIUM", "Boolean.parseBoolean(\"false\")")
 
+                resValue("string", "launch_name", "@string/launch_name_alpha")
+                resValue("string", "application_name", "@string/application_name_alpha")
+
                 if (isApp) {
-                    applicationIdSuffix = ".meta"
+                    applicationIdSuffix = ".alpha"
                 }
             }
 
@@ -92,6 +105,9 @@ subprojects {
                 versionNameSuffix = ".Meta"
 
                 buildConfigField("boolean", "PREMIUM", "Boolean.parseBoolean(\"false\")")
+
+                resValue("string", "launch_name", "@string/launch_name_meta")
+                resValue("string", "application_name", "@string/application_name_meta")
 
                 if (isApp) {
                     applicationIdSuffix = ".meta"
@@ -103,7 +119,7 @@ subprojects {
             getByName("meta") {
                 java.srcDirs("src/foss/java")
             }
-            getByName("meta-alpha") {
+            getByName("alpha") {
                 java.srcDirs("src/foss/java")
             }
         }
@@ -128,7 +144,7 @@ subprojects {
             named("release") {
                 isMinifyEnabled = isApp
                 isShrinkResources = isApp
-                signingConfig = signingConfigs.findByName("release")
+                signingConfig = signingConfigs.findByName("release") ?: signingConfigs["debug"]
                 proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
@@ -152,8 +168,15 @@ subprojects {
                 abi {
                     isEnable = true
                     isUniversalApk = true
+                    reset()
+                    include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
                 }
             }
+        }
+
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
         }
     }
 }

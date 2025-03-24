@@ -35,6 +35,8 @@ data class Proxy(
         WireGuard(false),
         Dns(false),
         Ssh(false),
+        Mieru(false),
+        AnyTLS(false),
 
 
         Relay(true),
